@@ -1,0 +1,28 @@
+let filter = rec filter =>
+  fn f => fn l =>
+    case l of
+      nil    => nil
+    | h :: t =>
+        let rest = filter f t in
+        if (f h) then (h :: rest) else rest
+        end
+in
+let fromTo = rec fromTo =>
+  fn m => fn n =>
+    if (m > n) then nil else (m :: (fromTo (succ m) n))
+in
+let sieve = rec sieve =>
+  fn l =>
+    case l of
+      nil       => nil
+    | p :: rest =>
+        p :: (sieve (filter (fn n => n % p <> 0) rest))
+in
+let primes = fn n =>
+  sieve (fromTo 2 n)
+in
+  primes 1000
+end end end end
+
+(* => list@168 *)
+(* all primes less or equal to 1000 *)

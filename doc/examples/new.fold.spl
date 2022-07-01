@@ -1,0 +1,7 @@
+let foldl = rec foldl =>
+  fn f => fn x => fn l =>
+    case l of
+      nil    => x
+    | h :: t => foldl f (f x h) t
+in foldl (fn x => fn y => x + y) 0 (1::2::3::4::nil)
+end

@@ -1,0 +1,53 @@
+let foldr = rec foldr =>
+  fn f => fn x => fn l =>
+    case l of
+      nil    => x
+    | h :: t => f h (foldr f x t)
+in
+let map = rec map =>
+  fn f => fn l =>
+    case l of
+      nil    => nil
+    | h :: t => (f h) :: (map f t)
+in
+let filter = rec filter =>
+  fn f => fn l =>
+    case l of
+      nil    => nil
+    | h :: t =>
+        let rest = filter f t in
+        if (f h) then (h :: rest) else rest
+        end
+in
+let append = rec append =>
+  fn l1 => fn l2 =>
+    case l1 of
+      nil    => l2
+    | h :: t => h :: (append t l2)
+in
+let concat = foldr append nil in
+let concatMap = fn f => fn l => concat (map f l) in
+let fromTo = rec fromTo =>
+  fn m => fn n =>
+    if (m > n) then nil else (m :: (fromTo (succ m) n))
+in
+let queens = fn n =>
+  let loop =
+    rec loop => fn boards => fn counter =>
+      if (counter = n)
+      then boards
+      else (loop (concatMap expand boards) (succ counter))
+    with expand => fn board =>
+      map (fn x => x :: board) (filter (fn x => safe x board 1) (fromTo 1 n))
+    with safe => fn x => fn l => fn n =>
+      case l of
+        nil    => true
+      | c :: y => (x <> c) andalso (x <> (c + n)) andalso (x <> (c - n))
+                           andalso (safe x y (succ n))
+  in
+    loop (nil::nil) 0
+  end
+in
+  queens 8
+end end end end end end end end
+(* ==> list@92 *)

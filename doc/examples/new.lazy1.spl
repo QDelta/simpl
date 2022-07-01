@@ -1,0 +1,5 @@
+let const = fn x => lazyfn y => x in
+  lazy a = hd nil in
+    const () (hd nil)
+  end
+end

@@ -1,0 +1,106 @@
+package simpl.parser;
+
+import java.io.InputStream;
+import java.util.Vector;
+import simpl.ast.*;
+import simpl.ast.Rec.Bind;
+
+action code {:
+    static Symbol symbol(String s) {
+        return Symbol.symbol(s);
+    }
+:};
+
+parser code {:
+    public Parser(InputStream in) {
+        this(new Lexer(in));
+    }
+:};
+
+terminal NIL;
+terminal REF;
+terminal FN, REC, WITH, LAZYFN;
+terminal LET, IN, END, LAZY;
+terminal IF, THEN, ELSE;
+terminal CASE, OF, OR;
+terminal WHILE, DO;
+terminal TRUE, FALSE;
+terminal NOT, ANDALSO, ORELSE;
+terminal ADD, SUB, MUL, DIV, MOD, NEG;
+terminal EQ, NE, LT, LE, GT, GE;
+terminal CONS, UNIT, ARROW;
+terminal ASSIGN, DEREF;
+terminal INL, INR;
+terminal COMMA, SEMI, LPAREN, RPAREN;
+terminal APP;
+terminal Integer NUM;
+terminal String ID;
+
+non terminal Expr e;
+non terminal Bind bind;
+non terminal Vector<Bind> recList;
+
+precedence right NUM, ID, TRUE, FALSE, NIL, FN, REC, WITH, ARROW, IF, ELSE, CASE, WHILE, DO, UNIT;
+precedence left SEMI;
+precedence nonassoc ASSIGN;
+precedence right ORELSE;
+precedence right ANDALSO;
+precedence nonassoc EQ, NE, LT, LE, GT, GE;
+precedence right CONS;
+precedence left ADD, SUB;
+precedence left MUL, DIV, MOD;
+precedence left APP, LPAREN;
+precedence right NEG, NOT, DEREF, REF, INL, INR;
+
+start with e;
+
+e ::= NUM:n {: RESULT = new IntegerLiteral(n.intValue()); :}
+    | ID:x  {: RESULT = new Name(symbol(x)); :}
+    | TRUE  {: RESULT = new BooleanLiteral(true); :}
+    | FALSE {: RESULT = new BooleanLiteral(false); :}
+    | NIL   {: RESULT = new Nil(); :}
+    | REF e:e {: RESULT = new Ref(e); :}
+    | FN ID:x ARROW e:e {: RESULT = new Fn(symbol(x), e); :}
+    | LAZYFN ID:x ARROW e:e {: RESULT = new LazyFn(symbol(x), e); :}
+    | REC bind:r recList:rs {: RESULT = new Rec(r, rs); :}
+    | LPAREN e:l COMMA e:r RPAREN {: RESULT = new Pair(l, r); :}
+    | NEG e:e {: RESULT = new Neg(e); :}
+    | NOT e:e {: RESULT = new Not(e); :}
+    | DEREF e:e {: RESULT = new Deref(e); :}
+    | INL e:e {: RESULT = new InL(e); :}
+    | INR e:e {: RESULT = new InR(e); :}
+    | e:l ADD e:r {: RESULT = new Add(l, r); :}
+    | e:l SUB e:r {: RESULT = new Sub(l, r); :}
+    | e:l MUL e:r {: RESULT = new Mul(l, r); :}
+    | e:l DIV e:r {: RESULT = new Div(l, r); :}
+    | e:l MOD e:r {: RESULT = new Mod(l, r); :}
+    | e:l EQ e:r {: RESULT = new Eq(l, r); :}
+    | e:l NE e:r {: RESULT = new Neq(l, r); :}
+    | e:l LT e:r {: RESULT = new Less(l, r); :}
+    | e:l LE e:r {: RESULT = new LessEq(l, r); :}
+    | e:l GT e:r {: RESULT = new Greater(l, r); :}
+    | e:l GE e:r {: RESULT = new GreaterEq(l, r); :}
+    | e:l ANDALSO e:r {: RESULT = new AndAlso(l, r); :}
+    | e:l ORELSE e:r {: RESULT = new OrElse(l, r); :}
+    | e:l CONS e:r {: RESULT = new Cons(l, r); :}
+    | e:l ASSIGN e:r {: RESULT = new Assign(l, r); :}
+    | e:l SEMI e:r {: RESULT = new Seq(l, r); :}
+    | e:l e:r {: RESULT = new App(l, r); :} %prec APP
+    | LET ID:x EQ e:e1 IN e:e2 END {: RESULT = new Let(symbol(x), e1, e2); :}
+    | LAZY ID:x EQ e:e1 IN e:e2 END {: RESULT = new LazyLet(symbol(x), e1, e2); :}
+    | IF e:e1 THEN e:e2 ELSE e:e3 {: RESULT = new Cond(e1, e2, e3); :}
+    | CASE e:e1 OF INL ID:x2 ARROW e:e2 OR INR ID:x3 ARROW e:e3
+        {: RESULT = new CaseSum(e1, symbol(x2), e2, symbol(x3), e3); :}
+    | CASE e:e1 OF NIL ARROW e:e2 OR ID:h CONS ID:t ARROW e:e3
+        {: RESULT = new CaseList(e1, e2, symbol(h), symbol(t), e3); :}
+    | WHILE e:e1 DO e:e2 {: RESULT = new Loop(e1, e2); :}
+    | UNIT {: RESULT = new Unit(); :}
+    | LPAREN e:e RPAREN {: RESULT = new Group(e); :}
+    ;
+
+bind ::= ID:x ARROW e:e {: RESULT = new Bind(symbol(x), e); :}
+       ;
+
+recList ::= recList:rs WITH bind:r {: rs.addElement(r); RESULT = rs; :}
+          |                        {: RESULT = new Vector<>(); :}
+          ;

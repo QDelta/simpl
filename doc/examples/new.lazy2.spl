@@ -1,0 +1,5 @@
+let x = ref 0 in
+  lazy y = (x := !x + 1) in
+    y;y;!x
+  end
+end

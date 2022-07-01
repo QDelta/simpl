@@ -1,0 +1,5 @@
+let f = fn b => fn x => fn y =>
+  if b then inl x else inr y
+in
+  (f true () 1, f false () 1)
+end
