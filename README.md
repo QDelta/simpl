@@ -33,9 +33,11 @@ Actually we are going to implement a special case of type class, supporting ad h
 A common technique to implement type classes is dictionary passing style, where each type records what classes it belongs to.
 
 But the original definition with equality type have a bit problem. The T-NIL rule:
+
 $$
 \frac{}{\Gamma\vdash \texttt{nil}:\alpha\ \texttt{list}}
 $$
+
 According to that rule, the type of $\texttt{nil}$ is always a list of an equality type, which makes the construction of list of other types impossible, and the definition of common list operations on arbitrary element impossible, like `fold` and `map`.
 
 So I relax this constraint, requiring it to be equality type only when it is compared to other expressions. It is also the usual way how type classes are implemented.
@@ -53,6 +55,7 @@ I also implement some extra features which are common in functional programming 
 The classical sum type.
 
 Syntax:
+
 $$
 \begin{align*}
 e ::= &\ \cdots\\
@@ -72,6 +75,7 @@ t ::= &\ \cdots\\
 $$
 
 Typing rules:
+
 $$
 \frac{\Gamma\vdash e:t_1}{\Gamma\vdash\texttt{inl}\ e:t_1+t_2}
 \qquad
@@ -84,10 +88,13 @@ $$
 $$
 
 Value definition:
+
 $$
 V_{t_1+t_2}=(\{\texttt{inl}\}\times V_{t_1})\cup(\{\texttt{inr}\}\times V_{t_2})
 $$
+
 Evaluation rules:
+
 $$
 \frac{E,M,p;e\Downarrow M',p';v}{E,M,p;\texttt{inl}\ e\Downarrow M',p';(\texttt{inl},v)}
 \qquad
@@ -124,19 +131,23 @@ end
 After relaxing the type constraint on $\texttt{nil}$, case expressions on lists is also necessary for defining list operations on arbitrary elements since expressions like $l=\texttt{nil}$ also require an equality type.
 
 Syntax:
+
 $$
 \begin{align*}
 e ::= &\ \cdots\\
   |\ \ &\texttt{case}\ e\ \texttt{of}\ \texttt{nil}\ \texttt{=>}\ e\ |\ x::x\  \texttt{=>}\ e
 \end{align*}
 $$
+
 Typing rule:
+
 $$
 \frac{\Gamma\vdash e_1:t_1\ \texttt{list}\quad\Gamma\vdash e_2:t_2\quad\Gamma[h:t_1][t:t_1\ \texttt{list}]\vdash e_3:t_2}
 {\Gamma\vdash\texttt{case}\ e_1\ \texttt{of}\ \texttt{nil}\ \texttt{=>}\ e_2\ |\ h::t\  \texttt{=>}\ e_3:t_2}
 $$
 
 Evaluation rules:
+
 $$
 \frac{E,M,p;e_1\Downarrow M',p';\texttt{nil}\quad E,M',p';e_2\Downarrow M'',p'';v_2}
 {E,M,p;\texttt{case}\ e_1\ \texttt{of}\ \texttt{nil}\ \texttt{=>}\ e_2\ |\ h::t\  \texttt{=>}\ e_3\Downarrow M'',p'';v_2}
@@ -157,7 +168,7 @@ let foldl = rec foldl =>
       nil    => x
     | h :: t => foldl f (f x h) t
 in
-	foldl (fn x => fn y => x + y) 0 (1::2::3::4::nil)
+  foldl (fn x => fn y => x + y) 0 (1::2::3::4::nil)
 end
 (* : int
    ==> 10 *)
@@ -172,6 +183,7 @@ Mutual recursion in ML dialects usually have two forms. The first form is mutual
 For syntax, I refer to [similar terms in Coq](https://coq.inria.fr/distrib/current/refman/language/core/inductive.html#recursive-functions-fix) like `fix <ident> := ... with <ident> :=  ... for <ident>`,  where multiple values are defined and one of them is returned. The other values should be considered and designed as helpers since they can not be accessed outside, which is also a limitation of mutual recursion in the second form.
 
 The original recursion syntax is modified to:
+
 $$
 \begin{align*}
 e ::= &\ \cdots\\
@@ -180,21 +192,26 @@ r ::=&\ r\ \texttt{with}\ x\ \texttt{=>}\ e\\
   |\ \ &x\ \texttt{=>}\ e
 \end{align*}
 $$
+
 I sacrifices the `for <ident>` part for a uniform syntax and make the parser generator happy. The first value is returned. But in the following part I will use $\texttt{rec}\ r_n\ \texttt{for}\ x_k$ syntax for convenience, where $r_n$ represents $x_1\ \texttt{=>}\ e_1\ \texttt{with}\ x_2\ \texttt{=>}\ e_2\cdots\texttt{with}\ x_n\ \texttt{=>}\ e_n$.
 
 The typing rule is modified to:
+
 $$
 \frac{\forall i,\Gamma[x_i:t_i]\vdash e_i:t_i}
 {\Gamma\vdash\texttt{rec}\ r_n\ \texttt{for}\ x_k:t_k}
 $$
 
 Value definition:
+
 $$
-\bold{Rec}=\{\texttt{rec}\}\times\bold{Env}\times\bold{Var}\times(\bold{Var}\rightarrow\bold{Exp})
+\bf{Rec}=\{\texttt{rec}\}\times\bf{Env}\times\bf{Var}\times(\bf{Var}\rightarrow\bf{Exp})
 $$
-Here $\bold{Var}\rightarrow\bold{Exp}$ means an mapping from $\bold{Var}$ to $\bold{Exp}$.
+
+Here $\bf{Var}\rightarrow\bf{Exp}$ means an mapping from $\bf{Var}$ to $\bf{Exp}$.
 
 Evaluation rules:
+
 $$
 \frac{E[x_i\mapsto(\texttt{rec},E,x_i,\{x_j\mapsto e_j\}^*)]^*,M,p;e_k\Downarrow M',p';v}
 {E,M,p;\texttt{rec}\ r_n\ \texttt{for}\ x_k\Downarrow M',p';v}
@@ -252,6 +269,7 @@ Make arbitrary part of the expression can be lazily evaluated is a little comple
 One way to solve the above problems is using graph reduction technique. But it requires a complete refactor of the interpreter architecture. For simplicity without a great loss of performance and functionality,  lazy bindings and functions evaluating arguments lazily (which is actually a lazy binding) can be introduced.
 
 The syntax:
+
 $$
 \begin{align*}
 e ::= &\ \cdots\\
@@ -259,34 +277,38 @@ e ::= &\ \cdots\\
   |\ \ &\texttt{lazyfn}\ x\ \texttt{=>}\ e
 \end{align*}
 $$
+
 The typing rules are similar to those of $\texttt{let}$ and $\texttt{fn}$ expressions.
 
 Value definition:
+
 $$
 \begin{align*}
-V_{thunk}&=\{\texttt{thunk}\}\times\bold{Env}\times\bold{Exp}\\
-V_{t_1\rightarrow t_2}&=\{\texttt{fun}\}\times\bold{Env}\times\bold{Var}\times\bold{Exp}\times\mathbb{B}
+V_{thunk}&=\{\texttt{thunk}\}\times\bf{Env}\times\bf{Exp}\\
+V_{t_1\rightarrow t_2}&=\{\texttt{fun}\}\times\bf{Env}\times\bf{Var}\times\bf{Exp}\times\mathbb{B}
 \end{align*}
 $$
+
 Evaluation rules:
+
 $$
 \frac{E[x\mapsto (\texttt{thunk},E,e_1)],M,p;e_2\Downarrow M',p',v}
 {E,M,p;\texttt{lazy}\ x=e\ \texttt{in}\ e\ \texttt{end}\Downarrow M',p';v}
 $$
 
 $$
-\frac{}{E,M,p;\texttt{fn}\ x\ \texttt{=>}\ e\Downarrow M,p;(\texttt{fun},E,x,e,\bold{ff})}
+\frac{}{E,M,p;\texttt{fn}\ x\ \texttt{=>}\ e\Downarrow M,p;(\texttt{fun},E,x,e,\bf{ff})}
 \qquad
-\frac{}{E,M,p;\texttt{lazyfn}\ x\ \texttt{=>}\ e\Downarrow M,p;(\texttt{fun},E,x,e,\bold{tt})}
+\frac{}{E,M,p;\texttt{lazyfn}\ x\ \texttt{=>}\ e\Downarrow M,p;(\texttt{fun},E,x,e,\bf{tt})}
 $$
 
 $$
-\frac{E,M,p;e_1\Downarrow M',p';(\texttt{fun},E_1,x,e,\bold{ff})\quad E,M',p';e_2\Downarrow M'',p'';v_2\quad E_1[x\mapsto v_2],M'',p'';e\Downarrow M''',p''';v}
+\frac{E,M,p;e_1\Downarrow M',p';(\texttt{fun},E_1,x,e,\bf{ff})\quad E,M',p';e_2\Downarrow M'',p'';v_2\quad E_1[x\mapsto v_2],M'',p'';e\Downarrow M''',p''';v}
 {E,M,p;e_1\ e_2\Downarrow M''',p''';v}
 $$
 
 $$
-\frac{E,M,p;e_1\Downarrow M',p';(\texttt{fun},E_1,x,e,\bold{tt})\quad E_1[x\mapsto (\texttt{thunk},E,e_2)],M',p';e\Downarrow M'',p'';v}
+\frac{E,M,p;e_1\Downarrow M',p';(\texttt{fun},E_1,x,e,\bf{tt})\quad E_1[x\mapsto (\texttt{thunk},E,e_2)],M',p';e\Downarrow M'',p'';v}
 {E,M,p;e_1\ e_2\Downarrow M',p';v}
 $$
 
