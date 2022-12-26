@@ -1,6 +1,4 @@
-<p style="text-align:center;font-size:2em"><b>CS383 Course Project Report</b></p>
-
-[TOC]
+## CS383 Course Project Report
 
 ### Introduction
 
@@ -213,7 +211,7 @@ Here $\bf{Var}\rightarrow\bf{Exp}$ means an mapping from $\bf{Var}$ to $\bf{Exp}
 Evaluation rules:
 
 $$
-\frac{E[x_i\mapsto(\texttt{rec},E,x_i,\{x_j\mapsto e_j\}^*)]^*,M,p;e_k\Downarrow M',p';v}
+\frac{E[x_i\mapsto(\texttt{rec},E,x_i,\{x_j\mapsto e_j\}^* )]^*,M,p;e_k\Downarrow M',p';v}
 {E,M,p;\texttt{rec}\ r_n\ \texttt{for}\ x_k\Downarrow M',p';v}
 $$
 
